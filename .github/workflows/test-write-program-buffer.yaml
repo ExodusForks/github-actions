@@ -20,8 +20,8 @@ jobs:
           solana_version: ${{ matrix.solana-version }}
 
       - name: Start local validator
-        shell: bash
-        run: ./write-program-buffer/tests/integration/start-validator.sh
+        id: validator
+        uses: ./start-test-validator
 
       - name: Prepare fresh-program scenario
         id: prepare-fresh
@@ -49,4 +49,4 @@ jobs:
       - name: Dump validator log on failure
         if: failure()
         shell: bash
-        run: tail -100 "$RUNNER_TEMP/test-ledger/validator.log" || true
+        run: tail -100 "${{ steps.validator.outputs.ledger-dir }}/validator.log" || true
