@@ -8,6 +8,11 @@ inputs:
     description: "Features to enable during build"
     required: false
     default: ""
+  base-image:
+    description: "Override solana-verify's --base-image. Pass the same value
+      to verify-build to keep the verify-PDA aligned."
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -20,10 +25,18 @@ runs:
 
     - name: Build Verified
       shell: bash
+      env:
+        FEATURES_INPUT: ${{ inputs.features }}
+        BASE_IMAGE: ${{ inputs.base-image }}
+        PROGRAM: ${{ inputs.program }}
       run: |
-        FEATURES="${{ inputs.features }}"
-        if [ ! -z "$FEATURES" ]; then
-          FEATURES="--features $FEATURES"
+        FEATURES=""
+        if [ -n "$FEATURES_INPUT" ]; then
+          FEATURES="--features $FEATURES_INPUT"
+        fi
+        BASE_IMAGE_ARG=""
+        if [ -n "$BASE_IMAGE" ]; then
+          BASE_IMAGE_ARG="--base-image $BASE_IMAGE"
         fi
         # Run solana-verify directly without Docker
-        ~/.cargo/bin/solana-verify build --library-name ${{ inputs.program }} -- $FEATURES
+        ~/.cargo/bin/solana-verify build $BASE_IMAGE_ARG --library-name "$PROGRAM" -- $FEATURES
