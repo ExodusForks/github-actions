@@ -2,7 +2,19 @@ name: Test write-program-buffer
 
 on:
   pull_request:
+    paths:
+      - "write-program-buffer/**"
+      - "start-test-validator/**"
+      - "setup-all/**"
+      - ".github/workflows/test-write-program-buffer.yaml"
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-write-program-buffer-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   integration:
@@ -27,6 +39,8 @@ jobs:
       - name: Prepare scenario
         id: prepare
         shell: bash
+        env:
+          RPC_URL: ${{ steps.validator.outputs.rpc-url }}
         run: ./write-program-buffer/tests/integration/prepare-${{ matrix.scenario }}.sh
 
       - name: Run write-program-buffer action
@@ -42,6 +56,7 @@ jobs:
       - name: Assert scenario
         shell: bash
         env:
+          RPC_URL: ${{ steps.validator.outputs.rpc-url }}
           BUFFER: ${{ steps.run.outputs.buffer }}
           PROGRAM_ID: ${{ steps.prepare.outputs.program-id }}
           DEPLOYER: ${{ steps.prepare.outputs.deployer }}
@@ -49,7 +64,9 @@ jobs:
           PRE_LEN: ${{ steps.prepare.outputs.pre-len }}
         run: ./write-program-buffer/tests/integration/assert-${{ matrix.scenario }}.sh
 
-      - name: Dump validator log on failure
+      - name: Dump validator logs on failure
         if: failure()
         shell: bash
-        run: tail -100 "${{ steps.validator.outputs.ledger-dir }}/validator.log" || true
+        run: |
+          tail -100 "$RUNNER_TEMP/validator-stdout.log" || true
+          tail -100 "${{ steps.validator.outputs.ledger-dir }}/validator.log" || true
