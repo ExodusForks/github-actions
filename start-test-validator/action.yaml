@@ -25,9 +25,11 @@ runs:
     - name: Start validator
       id: start
       shell: bash
+      env:
+        LEDGER_DIR_INPUT: ${{ inputs.ledger-dir }}
       run: |
         RPC_URL="http://127.0.0.1:8899"
-        LEDGER_DIR="${{ inputs.ledger-dir }}"
+        LEDGER_DIR="$LEDGER_DIR_INPUT"
         if [ -z "$LEDGER_DIR" ]; then
           LEDGER_DIR="${RUNNER_TEMP:-/tmp}/test-ledger"
         fi
@@ -47,7 +49,9 @@ runs:
         retry_wait_seconds: 1
         command: solana cluster-version -u ${{ steps.start.outputs.rpc-url }}
 
-    - name: Dump validator log if unhealthy
+    - name: Dump validator logs if unhealthy
       if: failure()
       shell: bash
-      run: tail -50 "${{ steps.start.outputs.ledger-dir }}/validator.log" 2>/dev/null || true
+      run: |
+        tail -50 "${RUNNER_TEMP:-/tmp}/validator-stdout.log" 2>/dev/null || true
+        tail -50 "${{ steps.start.outputs.ledger-dir }}/validator.log" 2>/dev/null || true
