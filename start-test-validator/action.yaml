@@ -24,12 +24,10 @@ runs:
   steps:
     - name: Start validator
       id: start
-      shell: bash
+      shell: bash -euo pipefail {0}
       env:
         LEDGER_DIR_INPUT: ${{ inputs.ledger-dir }}
       run: |
-        set -euo pipefail
-
         RPC_URL="http://127.0.0.1:8899"
         LEDGER_DIR="$LEDGER_DIR_INPUT"
         if [ -z "$LEDGER_DIR" ]; then
