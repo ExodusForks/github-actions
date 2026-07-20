@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-RPC_URL="http://127.0.0.1:8899"
+RPC_URL="${RPC_URL:-http://127.0.0.1:8899}"
 ARTIFACT="target/deploy/fixture-nearmax.so"
-MAX_PROGRAM_SIZE=10485715
+MAX_PERMITTED_DATA_LENGTH=10485760
+PROGRAMDATA_METADATA_SIZE=45
+MAX_PROGRAM_SIZE=$((MAX_PERMITTED_DATA_LENGTH - PROGRAMDATA_METADATA_SIZE))
 
 fail() {
   echo "ASSERT FAIL: $1" >&2
@@ -14,7 +16,7 @@ fail() {
 [ -n "${PROGRAM_ID:-}" ] || fail "PROGRAM_ID env not set"
 [ -n "${PRE_LEN:-}" ] || fail "PRE_LEN env not set"
 
-POST_LEN=$(solana program show "$PROGRAM_ID" -u "$RPC_URL" | grep "Data Length:" | awk '{print $3}')
+POST_LEN=$(solana program show "$PROGRAM_ID" -u "$RPC_URL" | grep "Data Length:" | sed -E 's/.*Data Length: ([0-9]+).*/\1/' | cut -d ' ' -f1)
 [ "$POST_LEN" -eq "$MAX_PROGRAM_SIZE" ] || fail "program data length is $POST_LEN, expected the exact maximum $MAX_PROGRAM_SIZE"
 echo "Program extended from $PRE_LEN to $POST_LEN (exact headroom of $((POST_LEN - PRE_LEN)) bytes)"
 

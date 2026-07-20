@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-RPC_URL="http://127.0.0.1:8899"
+RPC_URL="${RPC_URL:-http://127.0.0.1:8899}"
 FIXTURES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../fixtures" && pwd)"
 SCENARIO_DIR="${RUNNER_TEMP:-/tmp}/scenario-nearmax"
-MAX_PROGRAM_SIZE=10485715
+MAX_PERMITTED_DATA_LENGTH=10485760
+PROGRAMDATA_METADATA_SIZE=45
+MAX_PROGRAM_SIZE=$((MAX_PERMITTED_DATA_LENGTH - PROGRAMDATA_METADATA_SIZE))
 MIN_EXTEND_SIZE=10240
 ARTIFACT_MARGIN=2000
 
@@ -43,15 +45,19 @@ solana program deploy "$FIXTURES_DIR/program-small.so" \
   -u "$RPC_URL" -k "$SCENARIO_DIR/deployer.json" \
   --commitment confirmed
 
-PRE_LEN=$(solana program show "$PROGRAM_ID" -u "$RPC_URL" | grep "Data Length:" | awk '{print $3}')
-EXTEND_SETUP=$((TARGET_CURRENT - PRE_LEN))
+read_data_len() {
+  solana program show "$PROGRAM_ID" -u "$RPC_URL" | grep "Data Length:" | sed -E 's/.*Data Length: ([0-9]+).*/\1/' | cut -d ' ' -f1
+}
 
 for i in 1 2 3; do
-  if solana program extend "$PROGRAM_ID" "$EXTEND_SETUP" \
-    -u "$RPC_URL" -k "$SCENARIO_DIR/deployer.json" \
-    --commitment confirmed; then
+  CURRENT_LEN=$(read_data_len)
+  REMAINING=$((TARGET_CURRENT - CURRENT_LEN))
+  if [ "$REMAINING" -le 0 ]; then
     break
   fi
+  solana program extend "$PROGRAM_ID" "$REMAINING" \
+    -u "$RPC_URL" -k "$SCENARIO_DIR/deployer.json" \
+    --commitment confirmed && continue
   if [ "$i" -eq 3 ]; then
     echo "Setup extend failed after 3 attempts" >&2
     exit 1
@@ -59,7 +65,7 @@ for i in 1 2 3; do
   sleep 2
 done
 
-PRE_LEN=$(solana program show "$PROGRAM_ID" -u "$RPC_URL" | grep "Data Length:" | awk '{print $3}')
+PRE_LEN=$(read_data_len)
 if [ "$PRE_LEN" -ne "$TARGET_CURRENT" ]; then
   echo "Setup failed: program data length is $PRE_LEN, expected $TARGET_CURRENT" >&2
   exit 1

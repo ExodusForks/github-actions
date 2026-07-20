@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-RPC_URL="http://127.0.0.1:8899"
+RPC_URL="${RPC_URL:-http://127.0.0.1:8899}"
 FIXTURES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../fixtures" && pwd)"
 SCENARIO_DIR="${RUNNER_TEMP:-/tmp}/scenario-fresh"
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-RPC_URL="http://127.0.0.1:8899"
+RPC_URL="${RPC_URL:-http://127.0.0.1:8899}"
 FIXTURES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../fixtures" && pwd)"
 SCENARIO_DIR="${RUNNER_TEMP:-/tmp}/scenario-clamp"
 
@@ -34,7 +34,7 @@ solana program deploy "$FIXTURES_DIR/program-small.so" \
   -u "$RPC_URL" -k "$SCENARIO_DIR/deployer.json" \
   --commitment confirmed
 
-PRE_LEN=$(solana program show "$PROGRAM_ID" -u "$RPC_URL" | grep "Data Length:" | awk '{print $3}')
+PRE_LEN=$(solana program show "$PROGRAM_ID" -u "$RPC_URL" | grep "Data Length:" | sed -E 's/.*Data Length: ([0-9]+).*/\1/' | cut -d ' ' -f1)
 if [ -z "$PRE_LEN" ]; then
   echo "Could not read deployed program size" >&2
   exit 1

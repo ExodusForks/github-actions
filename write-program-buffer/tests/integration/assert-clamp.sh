@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-RPC_URL="http://127.0.0.1:8899"
+RPC_URL="${RPC_URL:-http://127.0.0.1:8899}"
 ARTIFACT="target/deploy/fixture-clamp.so"
 MIN_EXTEND_SIZE=10240
 
@@ -14,7 +14,7 @@ fail() {
 [ -n "${PROGRAM_ID:-}" ] || fail "PROGRAM_ID env not set"
 [ -n "${PRE_LEN:-}" ] || fail "PRE_LEN env not set"
 
-POST_LEN=$(solana program show "$PROGRAM_ID" -u "$RPC_URL" | grep "Data Length:" | awk '{print $3}')
+POST_LEN=$(solana program show "$PROGRAM_ID" -u "$RPC_URL" | grep "Data Length:" | sed -E 's/.*Data Length: ([0-9]+).*/\1/' | cut -d ' ' -f1)
 GROWTH=$((POST_LEN - PRE_LEN))
 [ "$GROWTH" -eq "$MIN_EXTEND_SIZE" ] || fail "program grew by $GROWTH bytes, expected exactly $MIN_EXTEND_SIZE"
 
