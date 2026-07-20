@@ -23,8 +23,9 @@ echo "$BUFFER_INFO"
 AUTHORITY=$(echo "$BUFFER_INFO" | grep "Authority:" | awk '{print $2}')
 [ "$AUTHORITY" = "$DEPLOYER" ] || fail "buffer authority is $AUTHORITY, expected deployer $DEPLOYER"
 
-if ! solana program show "$PROGRAM_ID" -u "$RPC_URL" 2>&1 | grep -q "Unable to find the account"; then
-  fail "program $PROGRAM_ID unexpectedly exists or the absence check errored"
+ABSENCE_CHECK=$(solana program show "$PROGRAM_ID" -u "$RPC_URL" 2>&1 || true)
+if ! echo "$ABSENCE_CHECK" | grep -q "Unable to find the account"; then
+  fail "program $PROGRAM_ID unexpectedly exists or the absence check errored: $ABSENCE_CHECK"
 fi
 
 echo "Fresh-program scenario assertions passed"
