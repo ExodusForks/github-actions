@@ -36,8 +36,8 @@ runs:
         solana-test-validator --reset --quiet --ledger "$LEDGER_DIR" > "${RUNNER_TEMP:-/tmp}/validator-stdout.log" 2>&1 &
         echo "Validator started with PID $!"
 
-        echo "rpc-url=$RPC_URL" >> $GITHUB_OUTPUT
-        echo "ledger-dir=$LEDGER_DIR" >> $GITHUB_OUTPUT
+        echo "rpc-url=$RPC_URL" >> "$GITHUB_OUTPUT"
+        echo "ledger-dir=$LEDGER_DIR" >> "$GITHUB_OUTPUT"
 
     - name: Wait for validator health
       uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
