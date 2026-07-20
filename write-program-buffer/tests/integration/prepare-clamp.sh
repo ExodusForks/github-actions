@@ -40,6 +40,17 @@ if [ -z "$PRE_LEN" ]; then
   exit 1
 fi
 
+DEPLOY_SLOT=$(solana slot -u "$RPC_URL")
+for i in $(seq 1 30); do
+  CURRENT_SLOT=$(solana slot -u "$RPC_URL")
+  [ "$CURRENT_SLOT" -gt "$DEPLOY_SLOT" ] && break
+  if [ "$i" -eq 30 ]; then
+    echo "Validator did not advance past slot $DEPLOY_SLOT" >&2
+    exit 1
+  fi
+  sleep 1
+done
+
 cp "$FIXTURES_DIR/program-big.so" target/deploy/fixture-clamp.so
 
 echo "Prepared clamp scenario: deployer=$DEPLOYER program-id=$PROGRAM_ID pre-len=$PRE_LEN"
