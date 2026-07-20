@@ -71,6 +71,17 @@ if [ "$PRE_LEN" -ne "$TARGET_CURRENT" ]; then
   exit 1
 fi
 
+EXTEND_SLOT=$(solana slot -u "$RPC_URL")
+for i in $(seq 1 30); do
+  CURRENT_SLOT=$(solana slot -u "$RPC_URL")
+  [ "$CURRENT_SLOT" -gt "$EXTEND_SLOT" ] && break
+  if [ "$i" -eq 30 ]; then
+    echo "Validator did not advance past slot $EXTEND_SLOT" >&2
+    exit 1
+  fi
+  sleep 1
+done
+
 echo "Prepared nearmax scenario: deployer=$DEPLOYER program-id=$PROGRAM_ID pre-len=$PRE_LEN headroom=$HEADROOM"
 {
   echo "keypair=$(cat "$SCENARIO_DIR/deployer.json")"
